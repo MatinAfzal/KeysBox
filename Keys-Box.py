@@ -1,11 +1,6 @@
-############################################################################
-# KeysBox Created By Matin Afzal
-# https://github.com/MatinAfzal
-# contact.matin@yahoo.com
-############################################################################
-
 from colorama import init, Fore
 from os import system, path, listdir
+from cryptography.fernet import Fernet
 from box import Box
 from time import sleep
 from columnar import columnar
@@ -13,11 +8,11 @@ from platform import system as ps
 from datetime import datetime
 from hashlib import md5
 import json
+import shutil
 
 # File identity information
 __author__ = "Matin Afzal (contact.matin@yahoo.com)"
-__version__ = "0.0.1"
-__last_modification__ = "2023/08/09"
+__version__ = "1.0.0"
 
 # Colorama init
 init()
@@ -27,33 +22,57 @@ RESET = Fore.RESET
 # running file path
 dirname = path.dirname(__file__)
 
-def login() -> None:
+
+def login():
     """
     login page
     """
     while True:
         system('cls' or 'delete')
         banner()
-        with open(os_valid_path(dirname, ["saves", "l1.txt"]),'r') as openfile:
-                    first = json.load(openfile)
+
+        with open(os_valid_path(dirname, ["saves", "l1.txt"]), 'r') as openfile:
+            first = json.load(openfile)
+
         if first[0] != 1:
             new_login_key = md5(input("Select password for your box: ").encode("utf-8")).hexdigest()
-            first = [1, new_login_key]
+            fernet_login_key = Fernet.generate_key()
+            temp_flk = md5(fernet_login_key).hexdigest()
+            first = [1, new_login_key, temp_flk]
+
             with open(os_valid_path(dirname, ["saves", "l1.txt"]), "w") as outfile:
                 json.dump(first, outfile)
                 print("Box Created successfully...")
+                outfile.close()
                 sleep(2)
+
+            with open('loginKey.key', 'wb') as filekey:
+                filekey.write(fernet_login_key)
+                filekey.close()
+
+            print("INITIAL SETTINGS CREATED! (RUN THE PROGRAM AGAIN)")
+            sleep(2)
+            exit()
         else:
             while True:
                 system('cls' or 'delete')
                 banner()
                 login_password = md5(input("Enter the box password: ").encode("utf-8")).hexdigest()
                 if first[1] == login_password:
-                    break
+                    fernet_login_key_path = input("Enter path to your login key path: ")
+                    with open(fernet_login_key_path, 'rb') as filekey:
+                        return_key = filekey.read()
+                    encrypted = md5(return_key).hexdigest()
+
+                    if encrypted == first[2]:
+                        return first[0], return_key
+                    else:
+                        print("Fernet Key not match to initial key!")
+                        sleep(2)
                 else:
                     print("Box password incorrect!")
                     sleep(2)
-            break
+
 
 def os_valid_path(dirname, paths) -> str:
     """
@@ -68,9 +87,7 @@ def os_valid_path(dirname, paths) -> str:
         for path in paths:
             dirname += f"/{path}"
         return dirname
-    
-# Box init
-box = Box(os_valid_path(dirname, ["saves", "box.txt"]))
+
 
 def banner() -> None:
     """
@@ -105,7 +122,8 @@ def banner() -> None:
             Created by Matin Afzal
                 github: https://github.com/MatinAfzal
 """+RESET)
-    
+
+
 def terminal_menu() -> str:
     """
     Display keys box main menu.
@@ -129,7 +147,8 @@ def terminal_menu() -> str:
             continue
 
         return command
-    
+
+
 def terminal_import() -> None:
     """
     Import the new password to keysbox.
@@ -155,6 +174,7 @@ def terminal_import() -> None:
             sleep(2)
             break
 
+
 def terminal_show(justShow=True) -> None:
     """
     Display passwords.
@@ -168,7 +188,7 @@ def terminal_show(justShow=True) -> None:
 
         for key, val in box.box_dict().items():
             data.append([index, key, val[0], val[1]])
-            index+=1
+            index += 1
 
         headers = ["Number", "Title", "Password", "Caption"]
         table = columnar(data, headers)
@@ -180,6 +200,7 @@ def terminal_show(justShow=True) -> None:
     else:
         print("there is no passwords!")
         sleep(2)
+
 
 def terminal_update() -> None:
     """
@@ -260,7 +281,8 @@ def terminal_update() -> None:
             elif command == "4":
                 break      
 
-def terminal_backup() -> None:
+
+def terminal_backup(key) -> None:
     """
     Display backups and make new backup.
     """
@@ -272,31 +294,34 @@ def terminal_backup() -> None:
             backs.append([backup])
         header = ["Backup name"]
         table = columnar(backs, header)
-        print(table)
     else:
+        table = "ERROR!"
         pass
 
     # make backups
     now = datetime.now()
     dt_string = now.strftime("%d.%m.%Y--%H.%M.%S")
     path = os_valid_path(dirname, ["backups", f"{dt_string}.txt"])
-    data = box.box_dict()
-    save_backup(path, data)
+    data_path = os_valid_path(dirname, ["saves", "box.txt"])
+    save_backup(path, data_path, key)
     print("new backup created successfilly!")
+    print(table)
     input("Enter any key to menu...")
 
-def save_backup(path, data) -> None:
+
+def save_backup(path, data_path, key) -> None:
     """
     Save data in path.
     """
-    try:
-        with open(path, "w") as outfile:
-            json.dump(data, outfile)
-    except:
-        print("there is a error during saving backup!")
+    shutil.copyfile(data_path, path)
+
 
 if __name__ == "__main__":
-    login()
+    first_run, key = login()
+
+    # Box init
+    box = Box(os_valid_path(dirname, ["saves", "box.txt"]), key=key, run=first_run)
+
     # Main Loop
     run = True
     while run:
@@ -308,6 +333,16 @@ if __name__ == "__main__":
         elif command == "3":
             terminal_update()
         elif command == "4":
-            terminal_backup()
+            terminal_backup(key)
         elif command == "5":
             run = False
+
+    # make backups
+    now = datetime.now()
+    dt_string = now.strftime("%d.%m.%Y--%H.%M.%S")
+    path = os_valid_path(dirname, ["backups", f"{dt_string}.txt"])
+    data_path = os_valid_path(dirname, ["saves", "box.txt"])
+    save_backup(path, data_path, key)
+
+    box.box_decrypt()
+    box.box_encrypt()
