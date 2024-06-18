@@ -23,10 +23,11 @@ RESET = Fore.RESET
 dirname = path.dirname(__file__)
 
 
-def login():
+def login(inital=None):
     """
     login page
     """
+    first_flag = False
     while True:
         system('cls' or 'delete')
         banner()
@@ -50,9 +51,21 @@ def login():
                 filekey.write(fernet_login_key)
                 filekey.close()
 
-            print("INITIAL SETTINGS CREATED! (RUN THE PROGRAM AGAIN)")
+            with open('loginKey.key', 'rb') as filekey:
+                return_key = filekey.read()
+
+            data_path = os_valid_path(dirname, ["saves", "box.txt"])
+            init_dict = {}
+            with open(data_path, 'w') as openfile:
+                json.dump(init_dict, openfile)
+
+            first_flag = True
+
+            print("your private loginKey.key created! (RUN THE PROGRAM AGAIN)\n"
+                  "Note: save your login key in safe place! ")
             sleep(2)
-            exit()
+
+            return first_flag, return_key
         else:
             while True:
                 system('cls' or 'delete')
@@ -65,7 +78,7 @@ def login():
                     encrypted = md5(return_key).hexdigest()
 
                     if encrypted == first[2]:
-                        return first[0], return_key
+                        return first_flag, return_key
                     else:
                         print("Fernet Key not match to initial key!")
                         sleep(2)
@@ -133,13 +146,14 @@ def terminal_menu() -> str:
         banner()
         print("""
         1 : Display passwords
-        2 : Import new password
-        3 : Update & Delete passwords
-        4 : Make backup
-        5 : Exit""")
+        2 : Signatures & Documents
+        3 : Import new password
+        4 : Update & Delete passwords
+        5 : Take Backup
+        6 : Exit""")
 
         command = input("--> ")
-        validCommnads = ["1", "2", "3", "4", "5"]
+        validCommnads = ["1", "2", "3", "4", "5", "6"]
 
         if command not in validCommnads:
             print("wrong command!")
@@ -200,6 +214,10 @@ def terminal_show(justShow=True) -> None:
     else:
         print("there is no passwords!")
         sleep(2)
+
+
+def terminal_sign_and_docs():
+    pass
 
 
 def terminal_update() -> None:
@@ -320,29 +338,32 @@ if __name__ == "__main__":
     first_run, key = login()
 
     # Box init
-    box = Box(os_valid_path(dirname, ["saves", "box.txt"]), key=key, run=first_run)
+    box = Box(os_valid_path(dirname, ["saves", "box.txt"]), key=key, first=first_run)
 
     # Main Loop
-    run = True
-    while run:
-        command = terminal_menu()
-        if command == "1":
-            terminal_show()
-        elif command == "2":
-            terminal_import()
-        elif command == "3":
-            terminal_update()
-        elif command == "4":
-            terminal_backup(key)
-        elif command == "5":
-            run = False
+    if not first_run:
+        run = True
+        while run:
+            command = terminal_menu()
+            if command == "1":
+                terminal_show()
+            elif command == "2":
+                terminal_sign_and_docs()
+            elif command == "3":
+                terminal_import()
+            elif command == "4":
+                terminal_update()
+            elif command == "5":
+                terminal_backup(key)
+            elif command == "6":
+                run = False
 
-    # make backups
-    now = datetime.now()
-    dt_string = now.strftime("%d.%m.%Y--%H.%M.%S")
-    path = os_valid_path(dirname, ["backups", f"{dt_string}.txt"])
-    data_path = os_valid_path(dirname, ["saves", "box.txt"])
-    save_backup(path, data_path, key)
+        # make backups
+        now = datetime.now()
+        dt_string = now.strftime("%d.%m.%Y--%H.%M.%S")
+        path = os_valid_path(dirname, ["backups", f"{dt_string}.txt"])
+        data_path = os_valid_path(dirname, ["saves", "box.txt"])
+        save_backup(path, data_path, key)
 
-    box.box_decrypt()
-    box.box_encrypt()
+        box.box_decrypt()
+        box.box_encrypt()

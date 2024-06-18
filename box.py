@@ -16,21 +16,21 @@ class Box:
     """
     The Box Of Keys
     """
-    def __init__(self, path, key=None, run=2) -> None:
+    def __init__(self, path, key=None, first=False) -> None:
         self.path = path
         self.key = key
         self.temp = None
 
-        if run == 0:
+        if first:
             self.box_encrypt()
-        self.box_decrypt()
+        # self.box_decrypt()
+        #
+        # with open(self.path, 'r') as openfile:
+        #     temp = json.load(openfile)
+        #
+        # self.box_encrypt()
 
-        with open(self.path, 'r') as openfile:
-            temp = json.load(openfile)
-
-        self.box_encrypt()
-
-        self.box = temp
+        self.box = self.box_dict()
 
     def box_dict(self):
         self.box_decrypt()
