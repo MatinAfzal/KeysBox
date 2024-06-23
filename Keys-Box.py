@@ -1,3 +1,5 @@
+import os
+
 from colorama import init, Fore
 from os import system, path, listdir
 from cryptography.fernet import Fernet
@@ -12,7 +14,12 @@ import shutil
 
 # File identity information
 __author__ = "Matin Afzal (contact.matin@yahoo.com)"
-__version__ = "1.0.0"
+__version__ = "1.2.0"
+
+# 1.0.0 -> initial version.
+# 1.1.0 -> fernet encryption feature.
+# 1.2.0 -> password search feature.
+# TODO 1.3.0 -> Signatures & Documents storing.
 
 # Colorama init
 init()
@@ -199,9 +206,10 @@ def terminal_show(justShow=True) -> None:
     if len(box.box_dict()) != 0:
         data = []
         index = 0
-
+        index_key = []
         for key, val in box.box_dict().items():
             data.append([index, key, val[0], val[1]])
+            index_key.append([index, key])
             index += 1
 
         headers = ["Number", "Title", "Password", "Caption"]
@@ -209,7 +217,33 @@ def terminal_show(justShow=True) -> None:
         print(table)
 
         if justShow:
-            any_key = input("Enter any key to menu...")
+            any_key = input("Enter any key to menu or [-1] to search: ")
+            if any_key == "-1":
+                os.system("cls" or "clear")
+                banner()
+
+                search_result = []
+                search_filtered_data = []
+                searched_key = input("Enter any letter of tittle to search: ")
+                letters = set(searched_key)
+                print("Founded Information's: ")
+                for index, key in index_key:
+                    if letters & set(key):
+                        search_result.append(index)
+
+                for index, key, val0, val1 in data:
+                    if index in search_result:
+                        search_filtered_data.append([index, key, val0, val1])
+
+                headers = ["Number", "Title", "Password", "Caption"]
+                table = columnar(search_filtered_data, headers)
+                print(table)
+
+                option = input("Enter any key to return or [-1] to menu: ")
+                if option != "-1":
+                    terminal_show(justShow=True)
+
+
 
     else:
         print("there is no passwords!")
@@ -217,7 +251,18 @@ def terminal_show(justShow=True) -> None:
 
 
 def terminal_sign_and_docs():
-    pass
+    os.system("cls" or "clear")
+    banner()
+
+    print("""
+        1 : Display Documents
+        2 : Import Documents
+        3 : Return
+        """)
+
+    option = input("-->")
+    print("Not available!")
+
 
 
 def terminal_update() -> None:
