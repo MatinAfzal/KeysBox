@@ -14,11 +14,12 @@ import shutil
 
 # File identity information
 __author__ = "Matin Afzal (contact.matin@yahoo.com)"
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 # 1.0.0 -> initial version.
 # 1.1.0 -> fernet encryption feature.
 # 1.2.0 -> password search feature.
+# 1.2.1 -> Bug fix: loginKey.key save on system32.
 # TODO 1.3.0 -> Signatures & Documents storing.
 
 # Colorama init
@@ -28,6 +29,7 @@ RESET = Fore.RESET
 
 # running file path
 dirname = path.dirname(__file__)
+print(dirname)
 
 
 def login(inital=None):
@@ -54,11 +56,11 @@ def login(inital=None):
                 outfile.close()
                 sleep(2)
 
-            with open('loginKey.key', 'wb') as filekey:
+            with open(dirname+'\\loginKey.key', 'wb') as filekey:
                 filekey.write(fernet_login_key)
                 filekey.close()
 
-            with open('loginKey.key', 'rb') as filekey:
+            with open(dirname+'\\loginKey.key', 'rb') as filekey:
                 return_key = filekey.read()
 
             data_path = os_valid_path(dirname, ["saves", "box.txt"])
@@ -69,7 +71,8 @@ def login(inital=None):
             first_flag = True
 
             print("your private loginKey.key created! (RUN THE PROGRAM AGAIN)\n"
-                  "Note: save your login key in safe place! ")
+                  "Note: save your login key in safe place!\n")
+            print("loginKey.key: ", dirname+"\\loginKey.key")
             sleep(2)
 
             return first_flag, return_key
