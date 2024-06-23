@@ -1,11 +1,11 @@
 # KeysBox
-A simple password manager with Python that allows you to store and manage your passwords.
+A password manager written in Python language that encrypts and stores your information with fernet.
 
 # Features
 * Save and display passwords.
 * Update/Delete and edit passwords.
 * Get backup.
-* Simple login page.
+* login page.
 
 # Preview
 
